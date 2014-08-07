@@ -1,0 +1,80 @@
+#!/bin/sh
+#
+# mongodb   Start the mongod
+#
+#
+#
+
+PREFIX=/opt/mongodb-linux-x86_64-2.6.3
+BINDIR=${PREFIX}/bin
+LOGIDR=/var/log/mongodb
+RUNDIR=/run/mongodb
+CONFIG=${PREFIX}/etc/mongodb.conf
+
+PATH=${PREFIX}/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+MONGOD=${BINDIR}/mongod
+ARGS="--config ${CONFIG}"
+
+NAME=mongod
+DESC="MongoDB"
+PIDFILE=${RUNDIR}/mongod.pid
+
+test -x $MONGOD || exit 0
+test -f ${CONFIG} || exit 0
+
+
+if [ -r /etc/default/$NAME ]
+then
+    . /etc/default/$NAME
+fi
+
+. /lib/lsb/init-functions
+
+set -e
+
+case "$1" in
+    start)
+        echo -n "Starting $DESC:"
+        mkdir -p $RUNDIR
+        touch $PIDFILE
+        chown mongodb:mongodb $RUNDIR $PIDFILE
+        chmod 755 $RUNDIR
+        if start-stop-daemon --start --umask 007 --chuid mongodb:mongodb --pidfile $PIDFILE --exec $MONGOD -- $ARGS
+        then
+            echo "succeeded"
+        else
+            echo "failed"
+        fi
+        ;;
+    stop)
+        [ -z "$2" ] && echo -n "Stopping $DESC: "
+        if $MONGOD $ARGS --shutdown
+        then
+            echo "succeeded"
+        else
+            echo "failed"
+        fi
+        rm -f $PIDFILE
+        sleep 1
+        ;;
+    restart)
+        sh $0 stop quiet
+        sleep 5
+        sh $0 start
+        ;;
+    status)
+        echo -n "$DESC is "
+        if start-stop-daemon --stop --quiet --signal 0 --name ${NAME} --pidfile $PIDFILE
+        then
+            echo "running"
+        else
+            echo "not running"
+            exit 1
+        fi
+        ;;
+    *)
+        echo "Usage: /etc/init.d/mongodb {start|stop|restart|status}"
+        exit 1
+esac
+
+exit 0

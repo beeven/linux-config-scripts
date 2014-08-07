@@ -1,0 +1,38 @@
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+auto eth1
+iface eth1 inet static
+    address 10.53.1.187
+    netmask 255.255.255.0
+    network 10.53.1.0
+    broadcast 10.53.1.255
+    gateway 10.53.1.254
+    # dns-* options are implemented by the resolvconf package, if installed
+    dns-nameservers 10.53.1.1
+    dns-search gz.intra.customs.gov.cn
+    up ip route add 10.53.1.0/24 dev eth1 src 10.53.1.187 table OAServer
+    up ip route add default via 10.53.1.254 table OAServer
+    up ip rule add from 10.53.1.187 table OAServer
+
+iface eth0 inet static
+    address 173.10.245.46
+    netmask 255.255.255.0
+    network 173.10.245.0
+    #gateway 173.10.245.254
+    up ip route add 173.10.245.0/24 dev eth0 src 173.10.245.46 table AQK
+    up ip route add 172.7.1.0/24 dev eth0 src 173.10.245.46 table AQK
+    up ip route add default via 173.10.245.254 table AQK
+    up ip rule add from 173.10.245.46 table AQK
+
+auto eth0
+
+iface tun0 inet static
+    address 10.245.254.1
+    netmask 255.255.255.252
+    pointopoint 10.245.254.2
